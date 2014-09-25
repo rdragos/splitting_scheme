@@ -2,7 +2,7 @@
 
 import logging
 import numpy
-
+import sys
 logging.basicConfig(filename='example.log',level=logging.DEBUG)
 
 class splittingScheme(object):
@@ -13,8 +13,8 @@ class splittingScheme(object):
         """
 
         if block_size % threshold:
-            print("Please give a block_size divisible by threshold")
-            return ;
+            raise Exception("block_not divisible by threshold")
+
         self.ptp_number = ptp_number
         self.threshold = threshold
         self.block_size = block_size
@@ -26,7 +26,7 @@ class splittingScheme(object):
             self.person.append(list())
             self.poly.append(list())
 
-        self.big_prime = 10000019
+        self.big_prime = 169743212279
 
     def split_into_blocks(self):
         """ read one byte at a time """
@@ -72,7 +72,7 @@ class splittingScheme(object):
         self.person[k][i] contains the evaluated polynomial self.poly[i][k] at point i
         """
         for blockl in self.allblocks:
-            #take |threshold| blocks and makea polynome
+            #take |threshold| blocks and make a polynome
             for i in range(0, len(blockl), self.threshold):
                 lb = [blockl[k] for k in range(i, i + self.threshold)]
                 lb = numpy.polynomial.Polynomial(lb)
@@ -147,32 +147,47 @@ class splittingScheme(object):
         self.give_shares()
 
     def debug(self):
-        print(self.allblocks)
+
+        pResults = s.compute_secret([0, 1, 2])
+
+        print("computed polynomial: " + str(pResults[2]))
+        print("original polynomial: " + str(s.poly[0][2]))
+        print("values at: " + str(s.person[0][2]) + " " + str(s.person[1][2]))
+
+        #just checking if computed polynomials match with the originals
+        for pIdx in range(len(pResults)):
+            cItem = pResults[pIdx]
+            oItem = s.poly[0][pIdx].coef
+            for k in range(len(cItem)):
+                if cItem[k] != oItem[k]:
+                    print("Lol a mistake at " + str(pIdx))
+
+    def dump_shares_to_file(self, output_file):
+        import cerealizer
+        lperson = []
+        for idx_p in range(len(self.person)):
+            lperson.append([int(x) for x in self.person[idx_p]])
+
+        cerealizer.dump(lperson, open(output_file, "wb"))
 
 def main():
 
-    nr_party = 10
-    sz_threshold = 4
-    block_size = 8
-    file_path = "test.in"
+    print(len(sys.argv), sys.argv[0])
+
+    if len(sys.argv) != 6:
+        print("Usage: python main.py nr_parties threshold_size block_size file_path shares_dump_file")
+        print("Example: python main.py 10 3 6 test.in shares_dump.out")
+        raise Exception("Incorrect args")
+
+    nr_party = int(sys.argv[1])
+    sz_threshold = int(sys.argv[2])
+    block_size = int(sys.argv[3])
+    file_path = sys.argv[4]
+    to_dump = sys.argv[5]
+
     s = splittingScheme(nr_party, sz_threshold, block_size, file_path)
     s.process_threshold_scheme()
-
-    pResults = s.compute_secret([0, 1, 2, 3])
-
-    print("computed polynomial: " + str(pResults[2]))
-    print("original polynomial: " + str(s.poly[0][2]))
-    print("values at: " + str(s.person[0][2]) + " " + str(s.person[1][2]))
-
-    #just checking if computed polynomials match with the originals
-    for pIdx in range(len(pResults)):
-        cItem = pResults[pIdx]
-        oItem = s.poly[0][pIdx].coef
-        for k in range(len(cItem)):
-            if cItem[k] != oItem[k]:
-                print("Lol a mistake at " + str(pIdx))
-
-    #s.debug()
+    s.dump_shares_to_file(to_dump)
 
 if __name__ == "__main__":
     main()
