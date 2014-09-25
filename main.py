@@ -8,7 +8,9 @@ logging.basicConfig(filename='example.log',level=logging.DEBUG)
 class splittingScheme(object):
 
     def __init__(self, ptp_number, threshold, block_size, file_path):
-        """block_size should be a multiple of the threshold"""
+        """block_size should be a multiple of the threshold
+            TODO: get a larger prime number
+        """
 
         if block_size % threshold:
             print("Please give a block_size divisible by threshold")
@@ -58,7 +60,6 @@ class splittingScheme(object):
         """Using this method: 0x80 0x00 0x00 ... 0x00 """
         last_block = self.allblocks[-1]
         if len(last_block) != self.block_size:
-
             remaining = self.block_size - len(last_block) - 1
             self.allblocks[-1].append(128)
             while remaining > 0:
@@ -67,27 +68,20 @@ class splittingScheme(object):
 
     def give_shares(self):
         """
-
         self.poly[i] is the list of polynomials for person i
         self.person[k][i] contains the evaluated polynomial self.poly[i][k] at point i
-
         """
         for blockl in self.allblocks:
+            #take |threshold| blocks and makea polynome
             for i in range(0, len(blockl), self.threshold):
                 lb = [blockl[k] for k in range(i, i + self.threshold)]
-
-                #debugging purposes
-                logging.debug(lb)
                 lb = numpy.polynomial.Polynomial(lb)
-
                 for k in range(0, self.ptp_number):
                     self.person[k].append(lb(k) % self.big_prime)
                     self.poly[k].append(lb)
 
-
     def lgput(self, a, b):
         """Raise a^b in log(b) time"""
-
         r = 1
         while b > 0:
             if (b & 1):
@@ -99,12 +93,10 @@ class splittingScheme(object):
 
     def modular_inverse(self, x):
         """compute inverse of x in GF(big_prime)"""
-
         return self.lgput(x, self.big_prime - 2)
 
     def interpolate_shares(self, pts):
         import numpy.polynomial as P
-
         #init the poly_sum with bunch of zeros
         sum_poly = numpy.array([0 for i in range(self.threshold)])
         """
@@ -132,7 +124,7 @@ class splittingScheme(object):
 
         """
             apply the field reduction for every coefficient, I think this would be better
-            if put some on upper lines
+            if put on upper lines, but python is great on big numbers ^_^
         """
         res = numpy.array([coef % self.big_prime for coef in sum_poly[0]])
         return res
@@ -172,7 +164,7 @@ def main():
     print("original polynomial: " + str(s.poly[0][2]))
     print("values at: " + str(s.person[0][2]) + " " + str(s.person[1][2]))
 
-
+    #just checking if computed polynomials match with the originals
     for pIdx in range(len(pResults)):
         cItem = pResults[pIdx]
         oItem = s.poly[0][pIdx].coef
