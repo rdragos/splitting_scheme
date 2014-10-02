@@ -69,10 +69,8 @@ class GaloisField(object):
                 toAdd = self.multGF2(a[idx_a], b[idx_b])
                 degree_sum = idx_a + idx_b
                 mul_res[degree_sum] = self.addGF2(mul_res[degree_sum], toAdd)
-                #print("Adding: " + str(toAdd) + " degree: " + str(degree_sum) + " pol_res: " + str(mul_res[degree_sum]))
-                #import pdb; pdb.set_trace()
-        print(str(a) + "*" + str(b) + "=" + str(mul_res))
 
+        #erasing last coeff if 0
         while len(mul_res) > 1 and mul_res[-1] == 0:
             mul_res = mul_res[0:len(mul_res) - 1]
         return mul_res
@@ -88,10 +86,10 @@ class GaloisField(object):
         if len(b) > len(a):
             copy1 = b
             copy2 = a
+
         while len(copy1) != len(copy2):
             copy2.append(0)
         res = [0 for x in range(len(copy1))]
-
         for idx in range(len(copy1)):
             res[idx] = self.addGF2(copy1[idx], copy2[idx])
 
@@ -164,12 +162,17 @@ class SplittingScheme(object):
     def pad_allblocks(self):
         """Using this method: 0x80 0x00 0x00 ... 0x00 """
         last_block = self.allblocks[-1]
+        print("last block: " + str(len(last_block)) + " standard block: " + str(self.block_size))
         if len(last_block) != self.block_size:
             remaining = self.block_size - len(last_block) - 1
             self.allblocks[-1].append(128)
             while remaining > 0:
                 self.allblocks[-1].append(0)
-                remaining -= 1
+                remaining -= 1;
+        """
+        for idx_block in range(len(self.allblocks)):
+            print("block with index: " + str(idx_block) + " has value: " + str(self.allblocks[idx_block]))
+        """
 
     def evalC(self, coefs, point):
         """
@@ -193,16 +196,14 @@ class SplittingScheme(object):
             #take |threshold| blocks and make a polynome
             for i in range(0, len(blockl), self.threshold):
                 raw_coefs = blockl[i: i + self.threshold]
-                print("raw: " + str(raw_coefs))
                 for ptp in range(self.ptp_number):
                     summation = self.evalC(raw_coefs, ptp)
                     self.person[ptp].append(summation)
                     self.poly[ptp].append(raw_coefs)
 
     def interpolate_shares(self, pts):
-        import numpy.polynomial as P
         #init the poly_sum with bunch of zeros
-        sum_poly = numpy.array([0 for i in range(self.threshold)])
+        sum_poly = [0 for i in range(self.threshold)]
         """
             Lagrange interpolation: yi * (x - xj) / (xi - xj), i != j
             Intuition: check what happens when you replace x with xi
@@ -213,7 +214,6 @@ class SplittingScheme(object):
             p = 1
             xi = pts[i][0]
             yi = pts[i][1]
-
             rolling = [1]
             for j in range(len(pts)):
                 if i == j:
@@ -221,14 +221,13 @@ class SplittingScheme(object):
                 xj = pts[j][0]
                 curInv = self.invTable[F.addGF2(xi, xj)]
                 p = F.multGF2(p, curInv)
-                up = [1, xj]
+                up = [xj, 1]
                 rolling = F.polymulGF2(up, rolling)
 
             rolling = F.polymulGF2(rolling, F.multGF2(yi, p))
             sum_poly = F.polyaddGF2(sum_poly, rolling)
-        print("summation: " + str(sum_poly))
-        res = [F.multGF2(coef, 1) for coef in sum_poly]
-        return res
+
+        return sum_poly
 
     def compute_secret(self, common_shares):
         """
@@ -238,7 +237,6 @@ class SplittingScheme(object):
         secret = []
         for idx_piece in range(len(self.person[0])):
             shares = [(idx, self.person[idx][idx_piece]) for idx in common_shares]
-            print("To compute shares: " + str(shares))
             cur_poly = self.interpolate_shares(shares)
             secret.append(cur_poly)
         return secret
@@ -250,7 +248,7 @@ class SplittingScheme(object):
 
     def debug(self):
         print(";".join(str(item) for item in self.person[0]))
-        pResults = self.compute_secret([0, 1, 2])
+        pResults = self.compute_secret([4,5,6])
         for pIdx in range(len(pResults)):
             print(str(pResults[pIdx]) + "<->" + str(self.poly[0][pIdx]))
 
@@ -265,7 +263,6 @@ class SplittingScheme(object):
         import pdb; pdb.set_trace()
 
 def main():
-
     print(len(sys.argv), sys.argv[0])
 
     if len(sys.argv) != 6:
@@ -284,6 +281,7 @@ def main():
     s.loadInv()
     s.process_threshold_scheme()
     s.dump_shares_to_file(to_dump)
-    s.debug()
+    #s.debug()
+
 if __name__ == "__main__":
     main()
