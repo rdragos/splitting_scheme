@@ -5,10 +5,103 @@ import numpy
 import sys
 logging.basicConfig(filename='example.log',level=logging.DEBUG)
 
-class splittingScheme(object):
+
+from functools import reduce
+
+class GaloisField(object):
+
+    # constants used in the multGF2 function
+    
+    def __init__(self, degree, irPoly):
+
+        """Define parameters of binary finite field GF(2^m)/g(x)
+           - degree: extension degree of binary field
+           - irPoly: coefficients of irreducible polynomial g(x)
+        """
+        def i2P(sInt):
+            """Convert an integer into a polynomial"""
+            return [(sInt >> i) & 1
+                    for i in reversed(range(sInt.bit_length()))]    
+        
+        self.mask1 = self.mask2 = 1 << degree
+        self.mask2 -= 1
+        self.polyred = reduce(lambda x, y: (x << 1) + y, i2P(irPoly)[1:])
+            
+    def multGF2(self, p1, p2):
+        """Multiply two polynomials in GF(2^m)/g(x)"""
+        p = 0
+        while p2:
+            if p2 & 1:
+                p ^= p1
+            p1 <<= 1
+            if p1 & self.mask1:
+                p1 ^= self.polyred
+            p2 >>= 1
+        return p & self.mask2
+    def addGF2(self, p1, p2):
+        """Add two polynomials in GF(2^m)/g(x)"""
+        res = 0
+        for i in range(8):
+            b1 = (p1 >> i) & 1
+            b2 = (p2 >> i) & 1
+
+            res ^= ((b1 ^ b2) << i)
+        return res
+    def lgputGF2(self, a, b):
+        #raise a ^ b mod g(x)
+        res = 1
+        while b > 0:
+            if b & 1:
+                res = self.multGF2(res, a)
+            a = self.multGF2(a, a)
+            b >>= 1
+        return res
+    def polymulGF2(self, a, b):
+        #sorry, no FFT goes here
+        if type(a) is int:
+            a = [a]
+        if type(b) is int:
+            b = [b]
+        # (x^2 + x + 1) (x^3 + x)
+        mul_res = [0 for x in range(len(a) + len(b))]
+        for idx_a in range(len(a)):
+            for idx_b in range(len(b)):
+                toAdd = self.multGF2(a[idx_a], b[idx_b])
+                degree_sum = idx_a + idx_b
+                mul_res[degree_sum] = self.addGF2(mul_res[degree_sum], toAdd)
+                #print("Adding: " + str(toAdd) + " degree: " + str(degree_sum) + " pol_res: " + str(mul_res[degree_sum]))
+                #import pdb; pdb.set_trace()
+        print(str(a) + "*" + str(b) + "=" + str(mul_res))
+
+        while len(mul_res) > 1 and mul_res[-1] == 0:
+            mul_res = mul_res[0:len(mul_res) - 1]
+        return mul_res
+
+    def polyaddGF2(self, a, b):
+        if type(a) is int:
+            a = [a]
+        if type(b) is int:
+            b = [b]
+
+        copy1 = a
+        copy2 = b
+        if len(b) > len(a):
+            copy1 = b
+            copy2 = a
+        while len(copy1) != len(copy2):
+            copy2.append(0)
+        res = [0 for x in range(len(copy1))]
+
+        for idx in range(len(copy1)):
+            res[idx] = self.addGF2(copy1[idx], copy2[idx])
+
+        return res
+
+class SplittingScheme(object):
 
     def __init__(self, ptp_number, threshold, block_size, file_path):
-        """block_size should be a multiple of the threshold
+        """ 
+            block_size should be a multiple of the threshold
             TODO: get a larger prime number
         """
 
@@ -27,6 +120,18 @@ class splittingScheme(object):
             self.poly.append(list())
 
         self.big_prime = 169743212279
+        self.field = GaloisField(8, 0b100011011)
+
+    def loadInv(self):
+        """keeping the inverses for each polynome"""
+        
+        self.invTable = [0 for i in range(256)]
+
+        with open("invtable.out", "r") as f:
+            line = f.readline().split(" ")
+            print(line)
+            for i in range(255):
+                self.invTable[i + 1] = int(line[i], 16)
 
     def split_into_blocks(self):
         """ read one byte at a time """
@@ -66,67 +171,63 @@ class splittingScheme(object):
                 self.allblocks[-1].append(0)
                 remaining -= 1
 
+    def evalC(self, coefs, point):
+        """
+        Evaluate poly formed by 'coefs' with point
+        """
+        F = self.field
+        summation = 0 
+        for idx_coef in range(len(coefs)):
+            cur_eval = F.lgputGF2(point, idx_coef)
+            cur_eval = F.multGF2(coefs[idx_coef], cur_eval)
+            summation = F.addGF2(summation, cur_eval)
+        return summation
+
     def give_shares(self):
         """
-        self.poly[i] is the list of polynomials for person i
-        self.person[k][i] contains the evaluated polynomial self.poly[i][k] at point i
+            self.poly[i] is the list of polynomials for person i
+            self.person[k][i] contains the evaluated polynomial self.poly[i][k] at point i
         """
+        F = self.field
         for blockl in self.allblocks:
             #take |threshold| blocks and make a polynome
             for i in range(0, len(blockl), self.threshold):
-                lb = [blockl[k] for k in range(i, i + self.threshold)]
-                lb = numpy.polynomial.Polynomial(lb)
-                for k in range(0, self.ptp_number):
-                    self.person[k].append(lb(k) % self.big_prime)
-                    self.poly[k].append(lb)
-
-    def lgput(self, a, b):
-        """Raise a^b in log(b) time"""
-        r = 1
-        while b > 0:
-            if (b & 1):
-                r = (r * a) % self.big_prime
-            a = (a * a) % self.big_prime
-
-            b >>= 1
-        return r
-
-    def modular_inverse(self, x):
-        """compute inverse of x in GF(big_prime)"""
-        return self.lgput(x, self.big_prime - 2)
+                raw_coefs = blockl[i: i + self.threshold]
+                print("raw: " + str(raw_coefs))
+                for ptp in range(self.ptp_number):
+                    summation = self.evalC(raw_coefs, ptp)
+                    self.person[ptp].append(summation)
+                    self.poly[ptp].append(raw_coefs)
 
     def interpolate_shares(self, pts):
         import numpy.polynomial as P
         #init the poly_sum with bunch of zeros
         sum_poly = numpy.array([0 for i in range(self.threshold)])
         """
-            lagrange interpolation: yi * (x - xj) / (xi - xj)
-            intuition: check what happens when you replace x with xi
+            Lagrange interpolation: yi * (x - xj) / (xi - xj), i != j
+            Intuition: check what happens when you replace x with xi
         """
+        F = self.field
+
         for i in range(len(pts)):
             p = 1
             xi = pts[i][0]
             yi = pts[i][1]
 
-            poly1 = numpy.polynomial.Polynomial([1])
+            rolling = [1]
             for j in range(len(pts)):
                 if i == j:
                     continue
-
                 xj = pts[j][0]
-                p = (p * self.modular_inverse((xi - xj) % self.big_prime)) % self.big_prime
-                #poly2 is down, poly1 is up
-                poly2 = P.Polynomial([-xj, 1])
-                poly1 = P.polynomial.polymul(poly1, poly2)[0]
+                curInv = self.invTable[F.addGF2(xi, xj)]
+                p = F.multGF2(p, curInv)
+                up = [1, xj]
+                rolling = F.polymulGF2(up, rolling)
 
-            poly1 = P.polynomial.polymul(poly1, (yi * p) % self.big_prime)
-            sum_poly = P.polynomial.polyadd(sum_poly, poly1)
-
-        """
-            apply the field reduction for every coefficient, I think this would be better
-            if put on upper lines, but python is great on big numbers ^_^
-        """
-        res = numpy.array([coef % self.big_prime for coef in sum_poly[0]])
+            rolling = F.polymulGF2(rolling, F.multGF2(yi, p))
+            sum_poly = F.polyaddGF2(sum_poly, rolling)
+        print("summation: " + str(sum_poly))
+        res = [F.multGF2(coef, 1) for coef in sum_poly]
         return res
 
     def compute_secret(self, common_shares):
@@ -137,6 +238,7 @@ class splittingScheme(object):
         secret = []
         for idx_piece in range(len(self.person[0])):
             shares = [(idx, self.person[idx][idx_piece]) for idx in common_shares]
+            print("To compute shares: " + str(shares))
             cur_poly = self.interpolate_shares(shares)
             secret.append(cur_poly)
         return secret
@@ -147,20 +249,10 @@ class splittingScheme(object):
         self.give_shares()
 
     def debug(self):
-
-        pResults = s.compute_secret([0, 1, 2])
-
-        print("computed polynomial: " + str(pResults[2]))
-        print("original polynomial: " + str(s.poly[0][2]))
-        print("values at: " + str(s.person[0][2]) + " " + str(s.person[1][2]))
-
-        #just checking if computed polynomials match with the originals
+        print(";".join(str(item) for item in self.person[0]))
+        pResults = self.compute_secret([0, 1, 2])
         for pIdx in range(len(pResults)):
-            cItem = pResults[pIdx]
-            oItem = s.poly[0][pIdx].coef
-            for k in range(len(cItem)):
-                if cItem[k] != oItem[k]:
-                    print("Lol a mistake at " + str(pIdx))
+            print(str(pResults[pIdx]) + "<->" + str(self.poly[0][pIdx]))
 
     def dump_shares_to_file(self, output_file):
         import cerealizer
@@ -169,6 +261,8 @@ class splittingScheme(object):
             lperson.append([int(x) for x in self.person[idx_p]])
 
         cerealizer.dump(lperson, open(output_file, "wb"))
+    def fun(self):
+        import pdb; pdb.set_trace()
 
 def main():
 
@@ -185,9 +279,11 @@ def main():
     file_path = sys.argv[4]
     to_dump = sys.argv[5]
 
-    s = splittingScheme(nr_party, sz_threshold, block_size, file_path)
+
+    s = SplittingScheme(nr_party, sz_threshold, block_size, file_path)
+    s.loadInv()
     s.process_threshold_scheme()
     s.dump_shares_to_file(to_dump)
-
+    s.debug()
 if __name__ == "__main__":
     main()
