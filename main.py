@@ -264,8 +264,18 @@ class SplittingScheme(object):
 
 def main():
     print(len(sys.argv), sys.argv[0])
-
     if len(sys.argv) != 6:
+        """
+        This tells us that the DB will split to nr_parties such that if no of parties < threshold_size
+        then the secret cannot be recovered (this is the ideal case)
+
+        Split the DB located in file_path into blocks of block_size.
+        Dump the shares for each person to shares_dump_file into an array.
+
+        Element at index 0 has the shares for the first person.
+        Element at index 1 has the shares for the second person and so on
+        """
+
         print("Usage: python main.py nr_parties threshold_size block_size file_path shares_dump_file")
         print("Example: python main.py 10 3 6 test.in shares_dump.out")
         raise Exception("Incorrect args")
