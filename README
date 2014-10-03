@@ -1,0 +1,20 @@
+Tested on python3.4.
+
+Requirements for running the script
+
+1) Python
+2) Cerealizer
+
+Installing Cerealizer:
+  pip install cerealizer
+
+Loading the shares:
+  python load.py shares_file_location
+  Now the variable "allshares" contains:
+  - index 0 shares for the first person
+  - index 1 shares for the second person
+  - and so on
+
+
+One can modify load.py script to play around with the shares
+

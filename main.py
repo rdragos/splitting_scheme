@@ -127,7 +127,6 @@ class SplittingScheme(object):
 
         with open("invtable.out", "r") as f:
             line = f.readline().split(" ")
-            print(line)
             for i in range(255):
                 self.invTable[i + 1] = int(line[i], 16)
 
@@ -162,7 +161,7 @@ class SplittingScheme(object):
     def pad_allblocks(self):
         """Using this method: 0x80 0x00 0x00 ... 0x00 """
         last_block = self.allblocks[-1]
-        print("last block: " + str(len(last_block)) + " standard block: " + str(self.block_size))
+        #print("last block: " + str(len(last_block)) + " standard block: " + str(self.block_size))
         if len(last_block) != self.block_size:
             remaining = self.block_size - len(last_block) - 1
             self.allblocks[-1].append(128)
@@ -257,8 +256,9 @@ class SplittingScheme(object):
         lperson = []
         for idx_p in range(len(self.person)):
             lperson.append([int(x) for x in self.person[idx_p]])
-
         cerealizer.dump(lperson, open(output_file, "wb"))
+
+        print("Succesfully dumped shares to: " + str(output_file))
     def fun(self):
         import pdb; pdb.set_trace()
 
