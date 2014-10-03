@@ -246,6 +246,11 @@ class SplittingScheme(object):
         self.give_shares()
 
     def debug(self):
+        """
+        Computes the secret by putting toghether the shares holded by list of persons
+        It's best to enumerate at least "threshold_size" elements
+        in the list to reconstruct the secret
+        """
         print(";".join(str(item) for item in self.person[0]))
         pResults = self.compute_secret([4,5,6])
         for pIdx in range(len(pResults)):
@@ -259,8 +264,6 @@ class SplittingScheme(object):
         cerealizer.dump(lperson, open(output_file, "wb"))
 
         print("Succesfully dumped shares to: " + str(output_file))
-    def fun(self):
-        import pdb; pdb.set_trace()
 
 def main():
     print(len(sys.argv), sys.argv[0])
