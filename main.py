@@ -117,7 +117,6 @@ class SplittingScheme(object):
             self.person.append(list())
             self.poly.append(list())
 
-        self.big_prime = 169743212279
         self.field = GaloisField(8, 0b100011011)
 
     def loadInv(self):
@@ -266,7 +265,6 @@ class SplittingScheme(object):
         print("Succesfully dumped shares to: " + str(output_file))
 
 def main():
-    print(len(sys.argv), sys.argv[0])
     if len(sys.argv) != 6:
         """
         This tells us that the DB will split to nr_parties such that if no of parties < threshold_size
