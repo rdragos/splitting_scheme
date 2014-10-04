@@ -10,23 +10,37 @@ def check_frequencies(secret, no_parties, threshold, block_size):
 
 	subprocess.call(["./main.py", str(no_parties), str(threshold), str(block_size), "pdf_test.in", "shares_dump.out"])
 	allshares = cerealizer.load(open("shares_dump.out", "rb"))
+
 	for idxShare1 in range(len(allshares)):
 		sh1 = allshares[idxShare1]
 		for idxShare2 in range(idxShare1 + 1, len(allshares)):
 			sh2 = allshares[idxShare2]
+			if sh1[0] == sh2[0]:
+				return (idxShare1, idxShare2)
 
-			toPrint = False
-			for idxPiece in range(len(sh1)):
-				if sh1[idxPiece] == sh2[idxPiece]:
-					toPrint = True
-			if toPrint:
-				print("indices " + str(idxShare1) + " " + str(idxShare2) + " " + str(sh1) + "->" + str(sh2))
-	
+	return "OK"
+
+def evaluate(file_type):
+	if file_type is 0:
+		return "doc"
+	elif file_type is 1:
+		return "gif"
+	elif file_type is 2:
+		return "pdf"
+	elif file_type is 3:
+		return "png"
+	elif file_type is 4:
+		return "ppt"
+	elif file_type is 5:
+		return "rar"
+	elif file_type is 6:
+		return "zip"
+
 def main():
 
-	pdf_hex = ['25', '50', '44', '46']
 	doc_hex = ['D0', 'CF', '11', 'E0']
 	gif_hex = ['47', '49', '46', '38']
+	pdf_hex = ['25', '50', '44', '46']
 	png_hex = ['89', '50', '4E', '47']
 	ppt_hex = ['D0', 'CF', '11', 'E0']
 	rar_hex = ['52', '61', '72', '21']
@@ -37,9 +51,12 @@ def main():
 	no_parties = int(sys.argv[1])
 	threshold = int(sys.argv[2])
 	block_size = int(sys.argv[3])
-	
-	for item in L:
-		check_frequencies(item, no_parties, threshold, block_size)
+
+	for idx, item in enumerate(L):
+		ret = check_frequencies(item, no_parties, threshold, block_size)
+		print(evaluate(idx) + " " + str(ret))
+
+
 	return 0
 
 if __name__ == "__main__":
