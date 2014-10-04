@@ -10,15 +10,8 @@ def check_frequencies(secret, no_parties, threshold, block_size):
 
     subprocess.call(["./main.py", str(no_parties), str(threshold), str(block_size), "pdf_test.in", "shares_dump.out"])
     allshares = cerealizer.load(open("shares_dump.out", "rb"))
-
-    for idxShare1 in range(len(allshares)):
-        sh1 = allshares[idxShare1]
-        for idxShare2 in range(idxShare1 + 1, len(allshares)):
-            sh2 = allshares[idxShare2]
-            if sh1[0] == sh2[0]:
-                return (idxShare1, idxShare2)
-
-    return "OK"
+    #return only the first poly
+    return [tp[0] for tp in allshares]
 
 def evaluate(file_type):
     if file_type is 0:
@@ -48,18 +41,29 @@ def main():
 
     L = [pdf_hex, doc_hex, gif_hex, png_hex, ppt_hex, rar_hex, zip_hex]
 
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 3:
         print ("Incorrect use of args. Run python 256 2 2")
         return 0
 
-    no_parties = int(sys.argv[1])
-    threshold = int(sys.argv[2])
-    block_size = int(sys.argv[3])
+    threshold = int(sys.argv[1])
+    block_size = int(sys.argv[2])
 
-    for idx, item in enumerate(L):
-        ret = check_frequencies(item, no_parties, threshold, block_size)
-        print(evaluate(idx) + " " + str(ret))
+    ans = [[-1 for x in range(len(L))] for y in range(len(L))]
+    cache = []
+    for item in L:
+        cache.append(check_frequencies(item, 256, threshold, block_size))
 
+    for idx1, item1 in enumerate(L):
+        ret1 = cache[idx1]
+        for idx2, item2 in enumerate(L):
+            ret2 = cache[idx2]
+            for k in range(1,256):
+                if ret1[k] == ret2[k]:
+                    ans[idx1][idx2] = k - 1
+                    break
+
+    for line in ans:
+        print(line)
 
     return 0
 
