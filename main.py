@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/python
 
 import logging
 import numpy
@@ -62,7 +62,6 @@ class GaloisField(object):
             a = [a]
         if type(b) is int:
             b = [b]
-        # (x^2 + x + 1) (x^3 + x)
         mul_res = [0 for x in range(len(a) + len(b))]
         for idx_a in range(len(a)):
             for idx_b in range(len(b)):
@@ -72,7 +71,7 @@ class GaloisField(object):
 
         #erasing last coeff if 0
         while len(mul_res) > 1 and mul_res[-1] == 0:
-            mul_res = mul_res[0:len(mul_res) - 1]
+            mul_res.pop()
         return mul_res
 
     def polyaddGF2(self, a, b):
