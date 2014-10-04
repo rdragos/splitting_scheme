@@ -48,6 +48,10 @@ def main():
 
 	L = [pdf_hex, doc_hex, gif_hex, png_hex, ppt_hex, rar_hex, zip_hex]
 
+	if len(sys.argv) != 4:
+		print ("Incorrect use of args. Run python 256 2 2")
+		return 0
+
 	no_parties = int(sys.argv[1])
 	threshold = int(sys.argv[2])
 	block_size = int(sys.argv[3])
