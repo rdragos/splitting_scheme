@@ -1,10 +1,6 @@
 #!/usr/bin/python
-
-import logging
 import numpy
 import sys
-logging.basicConfig(filename='example.log',level=logging.DEBUG)
-
 
 from functools import reduce
 
