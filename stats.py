@@ -9,6 +9,7 @@ def check_frequencies(secret, no_parties, threshold, block_size):
     f.close()
 
     subprocess.call(["./main.py", str(no_parties), str(threshold), str(block_size), "pdf_test.in", "shares_dump.out"])
+
     allshares = cerealizer.load(open("shares_dump.out", "rb"))
     #return only the first poly
     return [tp[0] for tp in allshares]
@@ -39,7 +40,7 @@ def main():
     rar_hex = ['52', '61', '72', '21']
     zip_hex = ['50', '4B', '03', '04']
 
-    L = [pdf_hex, doc_hex, gif_hex, png_hex, ppt_hex, rar_hex, zip_hex]
+    L = [doc_hex, gif_hex, pdf_hex, png_hex, ppt_hex, rar_hex, zip_hex]
 
     if len(sys.argv) != 3:
         print ("Incorrect use of args. Run python 256 2 2")
@@ -61,7 +62,6 @@ def main():
                 if ret1[k] == ret2[k]:
                     ans[idx1][idx2] = k - 1
                     break
-
     for line in ans:
         print(line)
 
@@ -69,4 +69,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
