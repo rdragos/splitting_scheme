@@ -185,6 +185,7 @@ class SplittingScheme(object):
             self.person[k][i] contains the evaluated polynomial self.poly[i][k] at point i
         """
         F = self.field
+        print(len(self.allblocks))
         for blockl in self.allblocks:
             #take |threshold| blocks and make a polynome
             for i in range(0, len(blockl), self.threshold):
@@ -192,8 +193,9 @@ class SplittingScheme(object):
                 for ptp in range(self.ptp_number):
                     summation = self.evalC(raw_coefs, ptp)
                     self.person[ptp].append(summation)
-                    self.poly[ptp].append(raw_coefs)
-
+                    #self.poly[ptp].append(raw_coefs)
+            #print("processed " + str(blockl))
+        print("Done giving")
     def interpolate_shares(self, pts):
         #init the poly_sum with bunch of zeros
         sum_poly = [0 for i in range(self.threshold)]
