@@ -7,6 +7,7 @@ Requirements for running the script
 
 Installing Cerealizer:
   pip install cerealizer
+  pip install matplotlib
 
 Loading the shares:
   python load.py shares_file_location

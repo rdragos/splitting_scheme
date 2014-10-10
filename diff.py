@@ -5,6 +5,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 import sys
 import os
 
+""" computes some plots between generated shares """
+
 def main():
 
     if len(sys.argv) != 3:
