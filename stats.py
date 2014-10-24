@@ -2,7 +2,7 @@ import cerealizer
 import sys
 import subprocess
 
-def check_frequencies(secret, no_parties, threshold, block_size):
+def get_first_share(secret, no_parties, threshold, block_size):
     sh_int = [int(str(x), 16) for x in secret]
     f = open("pdf_test.in", "wb")
     f.write(bytearray(sh_int))
@@ -12,7 +12,7 @@ def check_frequencies(secret, no_parties, threshold, block_size):
 
     allshares = cerealizer.load(open("shares_dump.out", "rb"))
     #return only the first poly
-    return [tp[0] for tp in allshares]
+    return [tp for tp in allshares]
 
 def evaluate(file_type):
     if file_type is 0:
@@ -43,7 +43,7 @@ def main():
     L = [doc_hex, gif_hex, pdf_hex, png_hex, ppt_hex, rar_hex, zip_hex]
 
     if len(sys.argv) != 3:
-        print ("Incorrect use of args. Run python 256 2 2")
+        print ("Incorrect use of args. Run python 2 2")
         return 0
 
     threshold = int(sys.argv[1])
@@ -52,20 +52,46 @@ def main():
     ans = [[-1 for x in range(len(L))] for y in range(len(L))]
     cache = []
     for item in L:
-        cache.append(check_frequencies(item, 256, threshold, block_size))
+        cache.append(get_first_share(item, 256, threshold, block_size))
 
+    #find maximum n s.t all shares are distinct
     for idx1, item1 in enumerate(L):
         ret1 = cache[idx1]
         for idx2, item2 in enumerate(L):
             ret2 = cache[idx2]
             for k in range(1,256):
-                if ret1[k] == ret2[k]:
+                if ret1[k][0] == ret2[k][0]:
                     ans[idx1][idx2] = k - 1
                     break
+
+    #find missing shares for each header
+
+    for idx, item in enumerate(L):
+        freq = [0 for x in range(256)]
+        fail = list()
+
+        ret = cache[idx]
+        for k in ret:
+            if idx1 == 0:
+                print(k)
+            for t in k:
+                freq[t] += 1
+
+        print(freq)
+        for x in range(256):
+            if freq[x] == 0:
+                fail.append(x)
+        print(evaluate(idx), fail)
+
+    print("Some matrix:")
     for line in ans:
         print(line)
 
+    """
+    for k in range(40,50):
+        print(str(k) + " " + str(cache[-2][k]) + "-> " + str(cache[-1][k]))
     return 0
+    """
 
 if __name__ == "__main__":
     main()
