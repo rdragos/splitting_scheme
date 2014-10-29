@@ -36,11 +36,11 @@ def main():
     gif_hex = ['47', '49', '46', '38']
     pdf_hex = ['25', '50', '44', '46']
     png_hex = ['89', '50', '4E', '47']
-    ppt_hex = ['D0', 'CF', '11', 'E0']
     rar_hex = ['52', '61', '72', '21']
+    wav_hex = ['52', '49', '46', '46']
     zip_hex = ['50', '4B', '03', '04']
 
-    L = [doc_hex, gif_hex, pdf_hex, png_hex, ppt_hex, rar_hex, zip_hex]
+    L = [doc_hex, gif_hex, pdf_hex, png_hex, rar_hex, wav_hex, zip_hex]
 
     if len(sys.argv) != 3:
         print ("Incorrect use of args. Run python 2 2")
@@ -53,10 +53,12 @@ def main():
     cache = []
     for item in L:
         cache.append(get_first_share(item, 256, threshold, block_size))
-
     #find maximum n s.t all shares are distinct
+    #import pdb; pdb.set_trace()
+
     for idx1, item1 in enumerate(L):
         ret1 = cache[idx1]
+        print(" & ".join(str(x[0]) for x in ret1[1:6]))
         for idx2, item2 in enumerate(L):
             ret2 = cache[idx2]
             for k in range(1,256):
@@ -65,7 +67,7 @@ def main():
                     break
 
     #find missing shares for each header
-
+    """
     for idx, item in enumerate(L):
         freq = [0 for x in range(256)]
         fail = list()
@@ -82,7 +84,7 @@ def main():
             if freq[x] == 0:
                 fail.append(x)
         print(evaluate(idx), fail)
-
+    """
     print("Some matrix:")
     for line in ans:
         print(line)
