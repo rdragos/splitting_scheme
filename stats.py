@@ -61,9 +61,10 @@ def main():
         print(" & ".join(str(x[0]) for x in ret1[1:6]))
         for idx2, item2 in enumerate(L):
             ret2 = cache[idx2]
-            for k in range(1,256):
-                if ret1[k][0] == ret2[k][0]:
-                    ans[idx1][idx2] = k - 1
+            for k in range(0,256):
+                t = (k + 1) % 256;
+                if ret1[t][0] == ret2[t][0]:
+                    ans[idx1][idx2] = k
                     break
 
     #find missing shares for each header
@@ -87,7 +88,7 @@ def main():
     """
     print("Some matrix:")
     for line in ans:
-        print(line)
+        print(" & ".join(str(x) for x in line))
 
     """
     for k in range(40,50):
