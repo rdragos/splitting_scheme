@@ -21,10 +21,12 @@ def main():
         for single_filename in metafiles:
             #print("single filename " + str(single_filename))
             parser = single_filename.split("/")[-1]
+            parser = parser.split(".pdf")[0]
+            print(parser)
             subprocess.call(
                 ["./main.py",
-                str(3), str(2), str(24),
-                single_filename, "shares-" + str(parser) + ".out"
+                str(4), str(2), str(2),
+                single_filename, str(parser) + ".hex"
             ])
 
 main()
