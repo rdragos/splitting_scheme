@@ -1,4 +1,5 @@
 Tested on python3.4.
+====================
 
 Requirements for running the script
 
@@ -22,19 +23,20 @@ One can modify load.py script to play around with the shares
 Usage
 ==========
 
-  $ python get_shares.py test_data/ correct_shamir | aloneh
-  Fetches all files from test_data and applied sharing scheme w.r.t to get_shares.py
-  (currently 4 2)
+    Fetches all files from test_data and applied sharing scheme w.r.t to get_shares.py
+    (currently 4 2)
 
-  After fetching the serialized files can be found in new_version/ folder
+    $ python get_shares.py test_data/ correct_shamir | aloneh
+
+    After fetching the serialized files can be found in new_version/ folder
 
 
 Statistics
 ===========
+    Plots graphs from the hex files with the shares computed at the previous steps.
 
-  $ python diff.py new_version/CV_BG.hex new_version/CV_DK.hex new_version/DM_RO.hex 4000
+    $ python diff.py new_version/CV_BG.hex new_version/CV_DK.hex new_version/DM_RO.hex 4000
 
-  plots graphs from the hex files with the shares computed at the previous steps
 
 
 
