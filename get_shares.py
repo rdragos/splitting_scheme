@@ -4,9 +4,10 @@ import os
 import subprocess
 def main():
 
-    if len(sys.argv) != 2:
+    if len(sys.argv) != 3:
         raise Exception("Incorrect args")
     main_dir = sys.argv[1]
+    method = sys.argv[2]
 
     allfiles = []
     for root, dirs, files in os.walk(main_dir):
@@ -25,8 +26,10 @@ def main():
             print(parser)
             subprocess.call(
                 ["./main.py",
-                str(4), str(2), str(2),
-                single_filename, str(parser) + ".hex"
+                str(5), str(2), str(2),
+                single_filename, 'new_version/' + str(parser) + ".hex",
+                method
             ])
 
-main()
+if __name__ == "__main__":
+    main()

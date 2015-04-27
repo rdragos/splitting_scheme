@@ -31,7 +31,7 @@ def main():
     lim = min(len(l1[0]),len(l2[0]),len(l3[0]),rng)
     x = np.arange(0, lim, 1)
 
-    for ptp in range(1,4):
+    for ptp in range(1,5):
         fig = plt.figure()
         fig.patch.set_facecolor('white')
         fig.subplots_adjust(hspace=.5)        

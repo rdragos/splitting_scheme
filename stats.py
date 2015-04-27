@@ -58,7 +58,7 @@ def main():
 
     for idx1, item1 in enumerate(L):
         ret1 = cache[idx1]
-        print(" & ".join(str(x[0]) for x in ret1[1:6]))
+        #print(" & ".join(str(x[0]) for x in ret1[1:6]))
         for idx2, item2 in enumerate(L):
             ret2 = cache[idx2]
             for k in range(0,256):

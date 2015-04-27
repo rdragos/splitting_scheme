@@ -1,6 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import numpy
 import sys
+import os
 
 from functools import reduce
 
@@ -92,8 +93,8 @@ class GaloisField(object):
 
 class SplittingScheme(object):
 
-    def __init__(self, ptp_number, threshold, block_size, file_path):
-        """ 
+    def __init__(self, ptp_number, threshold, block_size, file_path, method):
+        """
             block_size should be a multiple of the threshold
             TODO: get a larger prime number
         """
@@ -105,6 +106,7 @@ class SplittingScheme(object):
         self.threshold = threshold
         self.block_size = block_size
         self.file_path = file_path
+        self.method = method
 
         self.person = list()
         self.poly = list()
@@ -116,7 +118,7 @@ class SplittingScheme(object):
 
     def loadInv(self):
         """keeping the inverses for each polynome"""
-        
+
         self.invTable = [0 for i in range(256)]
 
         with open("invtable.out", "r") as f:
@@ -128,10 +130,13 @@ class SplittingScheme(object):
         """ read one byte at a time """
 
         self.allblocks = []
-
+        import struct
         with open(self.file_path, "rb") as f:
+
             byte = f.read(1)
+
             ibyte = int.from_bytes(byte, byteorder='big')
+
             nr_bytes = 1
             temp_block = [ibyte]
 
@@ -172,14 +177,14 @@ class SplittingScheme(object):
         Evaluate poly formed by 'coefs' with point
         """
         F = self.field
-        summation = 0 
+        summation = 0
         for idx_coef in range(len(coefs)):
             cur_eval = F.lgputGF2(point, idx_coef)
             cur_eval = F.multGF2(coefs[idx_coef], cur_eval)
             summation = F.addGF2(summation, cur_eval)
         return summation
 
-    def give_shares(self):
+    def give_shares_alouneh(self):
         """
             self.poly[i] is the list of polynomials for person i
             self.person[k][i] contains the evaluated polynomial self.poly[i][k] at point i
@@ -196,6 +201,23 @@ class SplittingScheme(object):
                     #self.poly[ptp].append(raw_coefs)
             #print("processed " + str(blockl))
         print("Done giving")
+
+    def _generate_random(self, how_many):
+        return [int.from_bytes(os.urandom(1),byteorder='big') for idx in range(how_many)]
+    def give_random_shares(self):
+        F = self.field
+
+        for blockl in self.allblocks:
+            for single_block in blockl:
+                raw_coefs = self._generate_random(self.threshold)
+                raw_coefs[0] = single_block
+
+                for party in range(self.ptp_number):
+                    summation = self.evalC(raw_coefs, party)
+                    self.person[party].append(summation)
+
+        print("Done giving all shares")
+
     def interpolate_shares(self, pts):
         #init the poly_sum with bunch of zeros
         sum_poly = [0 for i in range(self.threshold)]
@@ -239,7 +261,12 @@ class SplittingScheme(object):
     def process_threshold_scheme(self):
         self.split_into_blocks()
         self.pad_allblocks()
-        self.give_shares()
+        if self.method == "alouneh":
+            self.give_shares_alouneh()
+        elif self.method == "correct_shamir":
+            self.give_random_shares()
+        else:
+            raise Exception("not a valid method to perform splitting")
 
     def debug(self):
         """
@@ -262,7 +289,7 @@ class SplittingScheme(object):
         print("Succesfully dumped shares to: " + str(output_file))
 
 def main():
-    if len(sys.argv) != 6:
+    if len(sys.argv) != 7:
         """
         This tells us that the DB will split to nr_parties such that if no of parties < threshold_size
         then the secret cannot be recovered (this is the ideal case)
@@ -274,8 +301,8 @@ def main():
         Element at index 1 has the shares for the second person and so on
         """
 
-        print("Usage: python main.py nr_parties threshold_size block_size file_path shares_dump_file")
-        print("Example: python main.py 10 3 6 test.in shares_dump.out")
+        print("Usage: python main.py nr_parties threshold_size block_size file_path shares_dump_file alouneh | correct_shamir")
+        print("Example: python main.py 10 3 6 test.in shares_dump.out alouneh")
         raise Exception("Incorrect args")
 
     nr_party = int(sys.argv[1])
@@ -283,9 +310,9 @@ def main():
     block_size = int(sys.argv[3])
     file_path = sys.argv[4]
     to_dump = sys.argv[5]
+    method = sys.argv[6]
 
-
-    s = SplittingScheme(nr_party, sz_threshold, block_size, file_path)
+    s = SplittingScheme(nr_party, sz_threshold, block_size, file_path, method)
     s.loadInv()
     s.process_threshold_scheme()
     s.dump_shares_to_file(to_dump)
