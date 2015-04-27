@@ -26,7 +26,7 @@ Usage
     Fetches all files from test_data and applied sharing scheme w.r.t to get_shares.py
     (currently 4 2)
 
-    $ python get_shares.py test_data/ correct_shamir | aloneh
+    $ python get_shares.py test_data/ correct_shamir | wrong_scheme
 
     After fetching the serialized files can be found in new_version/ folder
 

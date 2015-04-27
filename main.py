@@ -184,7 +184,7 @@ class SplittingScheme(object):
             summation = F.addGF2(summation, cur_eval)
         return summation
 
-    def give_shares_alouneh(self):
+    def give_shares_wrong_scheme(self):
         """
             self.poly[i] is the list of polynomials for person i
             self.person[k][i] contains the evaluated polynomial self.poly[i][k] at point i
@@ -261,8 +261,8 @@ class SplittingScheme(object):
     def process_threshold_scheme(self):
         self.split_into_blocks()
         self.pad_allblocks()
-        if self.method == "alouneh":
-            self.give_shares_alouneh()
+        if self.method == "wrong_scheme":
+            self.give_shares_wrong_scheme()
         elif self.method == "correct_shamir":
             self.give_random_shares()
         else:
@@ -301,8 +301,8 @@ def main():
         Element at index 1 has the shares for the second person and so on
         """
 
-        print("Usage: python main.py nr_parties threshold_size block_size file_path shares_dump_file alouneh | correct_shamir")
-        print("Example: python main.py 10 3 6 test.in shares_dump.out alouneh")
+        print("Usage: python main.py nr_parties threshold_size block_size file_path shares_dump_file wrong_scheme | correct_shamir")
+        print("Example: python main.py 10 3 6 test.in shares_dump.out wrong_scheme")
         raise Exception("Incorrect args")
 
     nr_party = int(sys.argv[1])
